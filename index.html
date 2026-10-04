@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raunak's Kirana - Smart Store Management</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
+
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 space-y-3"></div>
+
+    <!-- Navigation Bar -->
+    <nav class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 md:px-8 py-4 flex flex-wrap justify-between items-center gap-4">
+        <a href="#" class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
+                <i class="fa-solid fa-store text-xl"></i>
+            </div>
+            <div>
+                <span class="text-xl font-bold tracking-wide text-white">Raunak's <span class="text-indigo-400">Kirana</span></span>
+                <p class="text-xs text-slate-400 font-medium">Smart Store & Inventory System</p>
+            </div>
+        </a>
+        <div class="flex items-center space-x-3 flex-wrap gap-2">
+            <button onclick="openKhataModal()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-md">
+                <i class="fa-solid fa-book-bookmark"></i> Udhaar Khata
+            </button>
+            <button onclick="document.getElementById('addProductModal').classList.remove('hidden')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-md">
+                <i class="fa-solid fa-plus"></i> + Add Item
+            </button>
+            <button onclick="document.getElementById('posModal').classList.remove('hidden')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-md">
+                <i class="fa-solid fa-cart-shopping"></i> Quick Sale (POS)
+            </button>
+            <button onclick="loadInventoryData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg text-sm border border-slate-700 transition flex items-center gap-1">
+                <i class="fa-solid fa-rotate-right"></i> Refresh
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Dashboard -->
+    <main class="max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-8">
+        
+        <!-- KPI Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs uppercase font-semibold tracking-wider">Tracked Products</p>
+                    <h2 id="kpiTotalProducts" class="text-3xl font-bold mt-1 text-white">--</h2>
+                </div>
+                <div class="bg-indigo-500/10 text-indigo-400 p-4 rounded-xl">
+                    <i class="fa-solid fa-box text-2xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs uppercase font-semibold tracking-wider">Projected Revenue</p>
+                    <h2 id="kpiRevenue" class="text-3xl font-bold mt-1 text-emerald-400">₹0</h2>
+                </div>
+                <div class="bg-emerald-500/10 text-emerald-400 p-4 rounded-xl">
+                    <i class="fa-solid fa-indian-rupee-sign text-2xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs uppercase font-semibold tracking-wider">Pending Udhaar</p>
+                    <h2 id="kpiUdhaar" class="text-3xl font-bold mt-1 text-amber-400">₹0</h2>
+                </div>
+                <div class="bg-amber-500/10 text-amber-400 p-4 rounded-xl">
+                    <i class="fa-solid fa-hand-holding-dollar text-2xl"></i>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6 flex items-center justify-between">
+                <div>
+                    <p class="text-slate-400 text-xs uppercase font-semibold tracking-wider">Re-order Alerts</p>
+                    <h2 id="kpiAlerts" class="text-3xl font-bold mt-1 text-rose-400">--</h2>
+                </div>
+                <div class="bg-rose-500/10 text-rose-400 p-4 rounded-xl">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- ML Demand Forecasting Chart -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-white">Stock Level vs Sales Forecast (30 Days)</h3>
+                    <p class="text-sm text-slate-400">Real-time Comparison of Current Stock against Demand Projections</p>
+                </div>
+            </div>
+            <div class="h-80 w-full">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Inventory Data Table -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl overflow-hidden">
+            <div class="p-6 border-b border-slate-700/60 flex flex-wrap justify-between items-center gap-4">
+                <h3 class="text-lg font-semibold text-white">Inventory Status & Smart Order Planning</h3>
+                
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-64">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+                        <input type="text" id="tableSearch" onkeyup="filterInventory()" placeholder="Search item name/id..." class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <span class="text-xs bg-slate-700/80 text-slate-300 px-3 py-1.5 rounded-md font-mono shrink-0">Real-time Sync</span>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[1000px]">
+                    <thead>
+                        <tr class="bg-slate-900/50 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-700/60">
+                            <th class="py-4 px-6">Product ID</th>
+                            <th class="py-4 px-6">Product Name</th>
+                            <th class="py-4 px-6">Category</th>
+                            <th class="py-4 px-6">Price</th>
+                            <th class="py-4 px-6">Current Stock</th>
+                            <th class="py-4 px-6">Predicted Demand</th>
+                            <th class="py-4 px-6">Suggested Reorder</th>
+                            <th class="py-4 px-6 text-center">Status</th>
+                            <th class="py-4 px-6 text-center">Supplier Action</th>
+                            <th class="py-4 px-6 text-center">Manage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody" class="divide-y divide-slate-700/50 text-sm text-slate-200">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal 1: Udhaar Khata Register -->
+    <div id="khataModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-lg font-semibold text-white flex items-center"><i class="fa-solid fa-book-open text-amber-400 mr-2"></i>Customer Udhaar Khata</h3>
+                <button onclick="document.getElementById('khataModal').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="khataForm" onsubmit="submitKhata(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="khataName" required placeholder="Customer Name" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500">
+                    <input type="text" id="khataPhone" placeholder="Phone Number" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" step="0.01" id="khataAmount" required placeholder="Udhaar Amount (₹)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500">
+                    <input type="text" id="khataNote" placeholder="Notes (e.g. Rice + Sugar)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2 rounded-lg transition text-sm">+ Add Udhaar Entry</button>
+            </form>
+            <div class="border-t border-slate-700 pt-3">
+                <h4 class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Pending Customer Debts</h4>
+                <div id="khataList" class="max-h-48 overflow-y-auto space-y-2 text-xs"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Add Product -->
+    <div id="addProductModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-white flex items-center"><i class="fa-solid fa-plus-circle text-indigo-400 mr-2"></i>Add / Update Kirana Item</h3>
+                <button onclick="document.getElementById('addProductModal').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="addProductForm" onsubmit="submitNewProduct(event)" class="space-y-3">
+                <input type="text" id="newProdId" required placeholder="Product ID (e.g. P105)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                <input type="text" id="newProdName" required placeholder="Product Name (e.g. Tata Salt 1kg)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="newCategory" required placeholder="Category (Grocery)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                    <input type="number" step="0.01" id="newPrice" required placeholder="Price (₹)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="newStock" required placeholder="Current Stock" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                    <input type="number" id="newThreshold" value="10" required placeholder="Reorder Threshold" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 rounded-lg transition mt-2">Save / Restock Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: POS Billing Counter -->
+    <div id="posModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-white flex items-center"><i class="fa-solid fa-cash-register text-emerald-400 mr-2"></i>Quick Sale Counter</h3>
+                <button onclick="document.getElementById('posModal').classList.add('hidden')" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="posForm" onsubmit="submitSale(event)" class="space-y-4">
+                <input type="text" id="posProductId" placeholder="Product ID (e.g. P101)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500">
+                <input type="number" id="posQty" min="1" placeholder="Quantity Sold" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500">
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg transition">Complete Billing & Print Bill</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Thermal Printable Receipt -->
+    <div id="receiptModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-700 text-slate-100 rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl font-mono">
+            <div class="text-center border-b border-dashed border-slate-700 pb-3">
+                <h2 class="font-bold text-lg text-white">RAUNAK'S KIRANA STORE</h2>
+                <p class="text-xs text-slate-400">Dhanbad, Jharkhand</p>
+                <p class="text-xs text-slate-500 mt-1">Date: <span id="receiptDate">--</span></p>
+            </div>
+            <div class="text-xs space-y-2">
+                <div class="flex justify-between">
+                    <span>Product:</span>
+                    <span id="receiptItemName" class="font-bold text-white">--</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Rate / Qty:</span>
+                    <span id="receiptRate">--</span>
+                </div>
+                <div class="flex justify-between text-sm font-bold border-t border-dashed border-slate-700 pt-2 text-emerald-400">
+                    <span>TOTAL BILL:</span>
+                    <span id="receiptTotal">₹0</span>
+                </div>
+            </div>
+            <div class="pt-2 flex gap-2">
+                <button onclick="window.print()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg text-xs font-sans transition">Print Bill</button>
+                <button onclick="document.getElementById('receiptModal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg text-xs font-sans transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
